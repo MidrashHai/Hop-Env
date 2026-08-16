@@ -1,6 +1,10 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 app.use(express.json({ limit: '10mb' }));
+
+// ── FICHIERS STATIQUES · sert index.html et assets depuis la racine du repo ──
+app.use(express.static(path.join(__dirname)));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -200,22 +204,27 @@ app.post('/nvidia', async (req, res) => {
   }
 });
 
-/* ── HEALTH ───────────────────────────────────────────────────────────────── */
-app.get('/', (req, res) => {
+/* ── HEALTH · /status retourne le JSON des providers ─────────────────────── */
+app.get('/status', (req, res) => {
   const status = Object.entries(MODEL_REGISTRY).map(([id, reg]) => ({
     provider_id: id,
     hop_role:    reg.hop_role,
     key_present: !!process.env[reg.shem_render]
   }));
   res.json({
-    service:  'HOP AI Gateway™ · v3.0',
-    date:     '16 août 2026',
-    corpus:   'Mishkan haRouah beOlam · 771',
+    service:   'HOP AI Gateway™ · v3.0',
+    date:      '16 août 2026',
+    corpus:    'Mishkan haRouah beOlam · 771',
     providers: status
   });
 });
 
 app.get('/health', (req, res) => res.json({ status: 'ok', version: '3.0' }));
+
+// ── FALLBACK · toute route non reconnue sert index.html ───────────────────
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 /* ── START ───────────────────────────────────────────────────────────────── */
 const PORT = process.env.PORT || 3000;
